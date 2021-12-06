@@ -20,15 +20,6 @@ describe("Strip", function () {
     })
 
     depositorSigner = await ethers.provider.getSigner(depositorAddr);
-
-    // sanity check to ensure this is being set correctly
-    // const weiAmount = (await deployer.getBalance()).toString();
-    // console.log("Depositor account balance (ETH):", (await ethers.utils.formatEther(weiAmount)));
-
-    const Strip = await ethers.getContractFactory("Strip", depositorSigner);
-    strip = await Strip.deploy();
-    await strip.deployed();
-    console.log('strip deployed to', strip.address);
   })
 
   it("Should be true", async function () {
