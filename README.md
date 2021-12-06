@@ -1,15 +1,17 @@
-# Basic Sample Hardhat Project
+# IO/PO Strips
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts.
+## Set up
 
-Try running some of the following tasks:
+Create a `.env` file at the project root with the following params:
 
-```shell
-npx hardhat accounts
-npx hardhat compile
-npx hardhat clean
+```
+FORKING_URL==https://eth-mainnet.alchemyapi.io/v2/<YOUR_API_KEY>
+```
+
+## Testing
+
+The following command runs all unit tests:
+
+```
 npx hardhat test
-npx hardhat node
-node scripts/sample-script.js
-npx hardhat help
 ```
