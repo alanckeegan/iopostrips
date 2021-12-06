@@ -2,8 +2,10 @@ const { assert } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("Strip", function () {
-  const depositorAddr = "0x47ac0Fb4F2D84898e4D9E7b4DaB3C24507a6D503";
+  const stethAddr = "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0";
+  
   let strip;
+  let steth;
 
   before(async () => {
     const signer = await ethers.provider.getSigner(0);
@@ -13,13 +15,19 @@ describe("Strip", function () {
     await strip.deployed();
     console.log('strip deployed to', strip.address);
     
+    steth = await ethers.getContractAt("IERC20", "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0", signer);
     
-    await hre.network.provider.request({
-        method: "hardhat_impersonateAccount",
-        params: [depositorAddr]
-    })
+    console.log('steth address', steth.address);
+    
+    // Don't think we need this now, but leaving in here for now in case we do
 
-    depositorSigner = await ethers.provider.getSigner(depositorAddr);
+    // await hre.network.provider.request({
+    //     method: "hardhat_impersonateAccount",
+    //     params: [stethAddr]
+    // });
+
+
+    // stethSigner = await ethers.provider.getSigner(depositorAddr);
   })
 
   it("Should be true", async function () {
