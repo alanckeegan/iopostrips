@@ -2,13 +2,14 @@ const { assert } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("Strip", function () {
-  const stethAddr = "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0";
+  // signers
+  let signer;
   
-  let strip;
-  let steth;
+  // contracts
+  let strip, steth;
 
   before(async () => {
-    const signer = await ethers.provider.getSigner(0);
+    signer = await ethers.provider.getSigner(0);
 
     const Strip = await ethers.getContractFactory("Strip", signer);
     strip = await Strip.deploy();
