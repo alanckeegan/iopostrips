@@ -16,9 +16,10 @@ contract Strip {
     uint trackerStartingValue;
   }
 
-  constructor() {
+  constructor(IERC20 _steth, uint _expiry) {
+    steth = _steth;
+    expiry = _expiry;
     // CAN CONSTRUCTOR DEPLOY IO AND PO AND SET THEM TO THE IERC20 INTERFACES
-    // TODO set expiry via solidity global
   }
 
   // function mint() {
