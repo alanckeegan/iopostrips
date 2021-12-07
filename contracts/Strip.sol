@@ -26,28 +26,19 @@ contract Strip {
   }
 
   function mint(uint _amount) external {
-    // NEED TO OVERRIDE _mint FUNCTION  FOR IO AND PO AND ADD TO INTERFACE
-    // (can do as function override or as an event trigger in our erc20 inherited contract)
-
     // recieves steth
     require(steth.transferFrom(msg.sender, address(this), _amount));
 
     // mints IOsteth and POsteth to sender
-    // io.mint(msg.sender, _amount);
-    // po.mint(msg.sender, _amount);
+    io.transfer(msg.sender, _amount);
+    po.transfer(msg.sender, _amount);
   }
 
   function redeem(uint _amount) external {
-    // NEED TO OVERRIDE _burn FUNCTION  FOR IO AND PO AND ADD TO INTERFACE
-    // (can do as function override or as an event trigger in our erc20 inherited contract)
 
     // recieves IOsteth and POsteth 
     require(io.transferFrom(msg.sender, address(this), _amount));
     require(po.transferFrom(msg.sender, address(this), _amount));
-
-    // burns IO and PO sent to this contract
-    // require(io.burn(address(this), _amount));
-    // require(po.burn(address(this), _amount));
 
     //  sends steth to sender
     steth.transfer(msg.sender, _amount);
@@ -88,7 +79,6 @@ contract Strip {
     
     // sends that steth
     steth.transfer(msg.sender, yield);
-
   }
 
   function unstakeIOAndClaim() external {
@@ -118,6 +108,7 @@ contract Strip {
     uint startingValue = stakerDeposits[_staker].trackerStartingValue;
     uint stakedIO = stakerDeposits[_staker].amount;
     uint stethYield = ((yieldTrackerBalance() - startingValue)/startingValue)*stakedIO;
+
     // the % growth in the value of the STETH * the amount of IO deposited is the claimable yield
     return stethYield;
   }
