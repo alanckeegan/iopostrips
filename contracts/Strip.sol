@@ -58,6 +58,7 @@ contract Strip {
   // function yieldTrackerBalance(){
     // checks a wallet (hopefully later a vault that can't recieve other steth) for it's steth balance
     // ***when we start the contract, we need to send 1 stETH to this "tracker wallet"
+    // ** in future this would have to be something that can't recieve more stETH or contract is hackable
   // }
 
   // function checkAccruedYield(){
