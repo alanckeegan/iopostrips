@@ -3,11 +3,11 @@ const { ethers } = require("hardhat");
 
 describe("Strip", function () {
   // addresses
-  const STETH_HOLDER_ADDRESS = "0x3b15cec2d922ab0ef74688bcc1056461049f89cb";
+  const STETH_CURVE_POOL = "0xdc24316b9ae028f1497c275eb9192a3ea0f67022";
   const STETH_CONTRACT_ADDRESS = "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84";
 
   // signers
-  let signer, stethHolder;
+  let signer, tracker, user;
   
   // contracts
   let strip, stEth;
@@ -19,8 +19,15 @@ describe("Strip", function () {
     // deploy strip contract
 
     signer = await ethers.provider.getSigner(0);
+    user = await ethers.provider.getSigner(1);
+    tracker = await ethers.provider.getSigner(2);
+
+    signerAddr = await signer.getAddress()
+    userAddr = await user.getAddress()
+    trackerAddr = await tracker.getAddress()
+
     const Strip = await ethers.getContractFactory("Strip", signer);
-    strip = await Strip.deploy(STETH_CONTRACT_ADDRESS, expiry, STETH_HOLDER_ADDRESS);
+    strip = await Strip.deploy(STETH_CONTRACT_ADDRESS, expiry, trackerAddr);
     await strip.deployed();
 
     console.log('strip deployed to:', strip.address);
@@ -33,14 +40,19 @@ describe("Strip", function () {
     
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
-      params: [STETH_HOLDER_ADDRESS]
+      params: [STETH_CURVE_POOL]
     });
 
-    stethHolder = await ethers.provider.getSigner(STETH_HOLDER_ADDRESS);
-    
-    const stethHolderBalance = await stEth.balanceOf(STETH_HOLDER_ADDRESS);
+    curvePool = await ethers.provider.getSigner(STETH_CURVE_POOL);
 
-    console.log('stethHolderBalance', stethHolderBalance);
+    await stEth.connect(curvePool).transfer(trackerAddr, ethers.utils.parseEther('1.0'))
+    await stEth.connect(curvePool).transfer(userAddr, ethers.utils.parseEther('5.0'))
+
+    const trackerBalance = await stEth.balanceOf(trackerAddr);
+    const userBalance = await stEth.balanceOf(userAddr);
+
+    console.log('Tracker Wallet Starting STETH Balance = ', ethers.utils.formatEther(trackerBalance));
+    console.log('User Wallet Starting STETH Balance= ', ethers.utils.formatEther(userBalance));
   })
 
   it("Should be true", async function () {

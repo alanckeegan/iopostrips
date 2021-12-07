@@ -5,6 +5,7 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract Strip {
+  // need to find a way to make yield no longer accrue after expiry
   uint expiry;
   IERC20 io;
   IERC20 po;
