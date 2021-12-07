@@ -3,6 +3,8 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./IOSteth.sol";
+import "./POSteth.sol";
 
 contract Strip {
   // need to find a way to make yield no longer accrue after expiry
@@ -23,6 +25,8 @@ contract Strip {
     steth = _steth;
     expiry = _expiry;
     trackerAddr = _trackerAddr;
+    io = new IOSTeth(10**18);
+    po = new POSteth(10**18);
   }
 
   function mint(uint _amount) external {
