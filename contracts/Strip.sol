@@ -72,7 +72,7 @@ contract Strip {
     uint yield = checkAccruedYield(msg.sender);
 
     // require non-zero yield
-    require(yield < 0, "No yield to claim, bucko, have your gas back");
+    require(yield > 0, "No yield to claim, bucko, have your gas back");
 
     // resets tracker amount on deposit to current steth tracker amount
     stakerDeposits[msg.sender].trackerStartingValue = yieldTrackerBalance();
