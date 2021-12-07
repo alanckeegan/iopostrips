@@ -17,9 +17,9 @@ contract Strip {
   }
 
   constructor(IERC20 _steth, uint _expiry) {
-    // CAN CONSTRUCTOR DEPLOY IO AND PO AND SET THEM TO THE IERC20 INTERFACES
     steth = _steth;
     expiry = _expiry;
+    // CAN CONSTRUCTOR DEPLOY IO AND PO AND SET THEM TO THE IERC20 INTERFACES
   }
 
   // function mint() {
