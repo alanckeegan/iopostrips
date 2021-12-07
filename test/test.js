@@ -5,12 +5,14 @@ describe("Strip", function () {
   // addresses
   const STETH_CURVE_POOL = "0xdc24316b9ae028f1497c275eb9192a3ea0f67022";
   const STETH_CONTRACT_ADDRESS = "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84";
+  const IO_CONTRACT_ADDRESS = "0xf1823bc4243b40423b8c8c3f6174e687a4c690b8";
+  const PO_CONTRACT_ADDRESS = "0x6a1b3c7624b69000d7848916fb4f42026409586c";
 
   // signers
   let signer, tracker, user;
   
   // contracts
-  let strip, stEth;
+  let strip, stEth, io, po;
 
   before(async () => {
     // TODO: set expiry to sensible value once we understand the implications (currently set to 3 months from now)
@@ -31,6 +33,13 @@ describe("Strip", function () {
     await strip.deployed();
 
     console.log('strip deployed to:', strip.address);
+
+    // retrieve IO and PO contracts
+    io = await ethers.getContractAt("IERC20", IO_CONTRACT_ADDRESS);
+    po = await ethers.getContractAt("IERC20", PO_CONTRACT_ADDRESS);
+
+    console.log('io deployed to:', io.address);
+    console.log('po deployed to:', po.address);
     
     // retrieve stEth contract (we may not actually need this to be defined in our test file, but keeping for the moment)
     stEth = await ethers.getContractAt("IERC20", STETH_CONTRACT_ADDRESS, signer);
@@ -53,9 +62,18 @@ describe("Strip", function () {
 
     console.log('Tracker Wallet Starting STETH Balance = ', ethers.utils.formatEther(trackerBalance));
     console.log('User Wallet Starting STETH Balance= ', ethers.utils.formatEther(userBalance));
+
+    
   })
 
-  it("Should be true", async function () {
-    assert.equal(true, true);
-  });
+  describe("Strip contract instantiation", () => {
+    it("should deploy the IO contract with total supply greater than 0", async () => {
+      const totalSupply = await io.totalSupply();
+      assert.isAbove(totalSupply, 0);
+    })
+    it("should deploy the PO contract with total supply greater than 0", async () => {
+      const totalSupply = await po.totalSupply();
+      assert.isAbove(totalSupply, 0);
+    })
+  })
 });
