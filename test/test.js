@@ -121,11 +121,31 @@ describe("Strip", function () {
       });
 
       it("should reduce user stETH holdings by 1", async () => {
-        const initalHolding = await stEth.balanceOf(userAddr);
+        const initialHolding = await stEth.balanceOf(userAddr);
         await stEth.connect(user).approve(strip.address, ethers.utils.parseEther('1.0'));
         await strip.connect(user).mint(ethers.utils.parseEther('1.0'));
         const finalHolding = await stEth.balanceOf(userAddr);
-        const holdingDifference = getRoundedSteth(initalHolding) - getRoundedSteth(finalHolding);
+        const holdingDifference = getRoundedSteth(finalHolding) - getRoundedSteth(initialHolding);
+        assert.strictEqual(holdingDifference, -1);
+      });
+
+      it("should transfer 1 IOSTeth to user", async () => {
+        const initialHolding = await io.balanceOf(userAddr);
+        await stEth.connect(user).approve(strip.address, ethers.utils.parseEther('1.0'));
+        await strip.connect(user).mint(ethers.utils.parseEther('1.0'));
+        const finalHolding = await io.balanceOf(userAddr);
+        const holdingDifference = ethers.utils.formatEther(finalHolding) - ethers.utils.formatEther(initialHolding);
+
+        assert.strictEqual(holdingDifference, 1);
+      });
+
+      it("should transfer 1 POSTeth to user", async () => {
+        const initialHolding = await po.balanceOf(userAddr);
+        await stEth.connect(user).approve(strip.address, ethers.utils.parseEther('1.0'));
+        await strip.connect(user).mint(ethers.utils.parseEther('1.0'));
+        const finalHolding = await po.balanceOf(userAddr);
+        const holdingDifference = ethers.utils.formatEther(finalHolding) - ethers.utils.formatEther(initialHolding);
+
         assert.strictEqual(holdingDifference, 1);
       });
     });
