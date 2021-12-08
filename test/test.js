@@ -1,16 +1,47 @@
 const { assert } = require("chai");
 const { ethers } = require("hardhat");
 
+// testing reverts in async functions
+// there's a pattern used in the tests below where an async function is called in a try block and expected to throw an error (revert)
+// the catch block runs in the case of an error and the test then "passes"
+// if the catch block is skipped, the test "fails"
+// this test should be reliable, but is not the most readable, hence this note
+// there may be other ways to test errors in async functions, but this seemed to be a reasonable approach
+
 describe("Strip", function () {
   // addresses
   const STETH_CURVE_POOL = "0xdc24316b9ae028f1497c275eb9192a3ea0f67022";
   const STETH_CONTRACT_ADDRESS = "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84";
+  const IO_CONTRACT_ADDRESS = "0xf1823bc4243b40423b8c8c3f6174e687a4c690b8";
+  const PO_CONTRACT_ADDRESS = "0x6a1b3c7624b69000d7848916fb4f42026409586c";
 
   // signers
   let signer, tracker, user;
   
   // contracts
-  let strip, stEth;
+  let strip, stEth, io, po;
+
+  // due to a rounding issue in the deploystETH contract, a value of 1 is being returned as 0.999999999999999999
+  // this function returns the number rounded up to the next whole stETH
+  const getRoundedSteth = stethValue => {
+    return Math.ceil(Number(ethers.utils.formatEther(stethValue)));
+  }
+
+  const mintStEth = async () => {
+    await stEth.connect(user).approve(strip.address, ethers.utils.parseEther('1.0'));
+    await strip.connect(user).mint(ethers.utils.parseEther('1.0'));
+  }
+
+  const redeemStEth = async () => {
+    await io.connect(user).approve(strip.address, ethers.utils.parseEther('1.0'));
+    await po.connect(user).approve(strip.address, ethers.utils.parseEther('1.0'));
+    await strip.connect(user).redeem(ethers.utils.parseEther('1.0'));
+  }
+
+  const stakeIo = async () => {
+    await io.connect(user).approve(strip.address, ethers.utils.parseEther('1.0'));
+    await strip.connect(user).stakeIO(ethers.utils.parseEther('1.0'));
+  }
 
   before(async () => {
     // TODO: set expiry to sensible value once we understand the implications (currently set to 3 months from now)
@@ -31,6 +62,13 @@ describe("Strip", function () {
     await strip.deployed();
 
     console.log('strip deployed to:', strip.address);
+
+    // retrieve IO and PO contracts
+    io = await ethers.getContractAt("IERC20", IO_CONTRACT_ADDRESS);
+    po = await ethers.getContractAt("IERC20", PO_CONTRACT_ADDRESS);
+
+    console.log('io deployed to:', io.address);
+    console.log('po deployed to:', po.address);
     
     // retrieve stEth contract (we may not actually need this to be defined in our test file, but keeping for the moment)
     stEth = await ethers.getContractAt("IERC20", STETH_CONTRACT_ADDRESS, signer);
@@ -45,17 +83,173 @@ describe("Strip", function () {
 
     curvePool = await ethers.provider.getSigner(STETH_CURVE_POOL);
 
-    await stEth.connect(curvePool).transfer(trackerAddr, ethers.utils.parseEther('1.0'))
-    await stEth.connect(curvePool).transfer(userAddr, ethers.utils.parseEther('5.0'))
+    await stEth.connect(curvePool).transfer(trackerAddr, ethers.utils.parseEther('1.0'));
+    await stEth.connect(curvePool).transfer(userAddr, ethers.utils.parseEther('5.0'));
 
     const trackerBalance = await stEth.balanceOf(trackerAddr);
     const userBalance = await stEth.balanceOf(userAddr);
 
-    console.log('Tracker Wallet Starting STETH Balance = ', ethers.utils.formatEther(trackerBalance));
-    console.log('User Wallet Starting STETH Balance= ', ethers.utils.formatEther(userBalance));
+    console.log('Tracker Wallet Starting STETH Balance = ', getRoundedSteth(trackerBalance));
+    console.log('User Wallet Starting STETH Balance= ', getRoundedSteth(userBalance));
+
+    
   })
 
-  it("Should be true", async function () {
-    assert.equal(true, true);
+  describe("Strip contract instantiation", () => {
+    it("should deploy the IO contract with total supply greater than 0", async () => {
+      const totalSupply = await io.totalSupply();
+      assert.isAbove(totalSupply, 0);
+    })
+
+    it("should deploy the PO contract with total supply greater than 0", async () => {
+      const totalSupply = await po.totalSupply();
+      assert.isAbove(totalSupply, 0);
+    })
+
+    it("should have an initial balance of 0 stETH in Strip contract", async () => {
+      const stripBalance = await stEth.balanceOf(strip.address);
+      assert.strictEqual(stripBalance, 0);
+    })
+  });
+
+  describe("mint()", () => {
+    describe("stETH transfer not approved", () => {
+      it("should throw revert error on method call", async () => {
+        try {
+          await strip.connect(user).mint(1);
+        } catch (e) {
+          assert.include(e.message, "revert");
+          return;
+        }
+        assert.isOk(false);
+      });
+
+      it("should not transfer 1 stETH to Strip contract", async () => {
+        try {
+          await strip.connect(user).mint(1);
+        } catch (e) { 
+          // carry on execution
+        }
+
+        const stripBalance = await stEth.balanceOf(strip.address);
+        assert.strictEqual(stripBalance, 0);
+      });
+    });
+    describe("stETH transfer approved", () => {
+      it("should transfer 1 stETH to Strip contract", async () => {
+        await mintStEth();
+        const stripBalance = await stEth.balanceOf(strip.address);
+
+        assert.strictEqual(getRoundedSteth(stripBalance), 1);
+      });
+
+      it("should reduce user stETH holdings by 1", async () => {
+        const initialHolding = await stEth.balanceOf(userAddr);
+        await mintStEth();
+        const finalHolding = await stEth.balanceOf(userAddr);
+        const holdingDifference = getRoundedSteth(finalHolding) - getRoundedSteth(initialHolding);
+
+        assert.strictEqual(holdingDifference, -1);
+      });
+
+      it("should transfer 1 IOSTeth to user", async () => {
+        const initialHolding = await io.balanceOf(userAddr);
+        await mintStEth();
+        const finalHolding = await io.balanceOf(userAddr);
+        const holdingDifference = ethers.utils.formatEther(finalHolding) - ethers.utils.formatEther(initialHolding);
+
+        assert.strictEqual(holdingDifference, 1);
+      });
+
+      it("should transfer 1 POSTeth to user", async () => {
+        const initialHolding = await po.balanceOf(userAddr);
+        await mintStEth();
+        const finalHolding = await po.balanceOf(userAddr);
+        const holdingDifference = ethers.utils.formatEther(finalHolding) - ethers.utils.formatEther(initialHolding);
+
+        assert.strictEqual(holdingDifference, 1);
+      });
+    });
+  });
+
+  describe("redeem()", () => {
+    it("should send user stEth", async () => {
+      await mintStEth();
+      const initialHolding = await stEth.balanceOf(userAddr);
+      await redeemStEth();
+      const finalHolding = await stEth.balanceOf(userAddr);
+      const holdingDifference = getRoundedSteth(finalHolding) - getRoundedSteth(initialHolding);
+
+      assert.strictEqual(holdingDifference, 1);
+    });
+
+    it("should reduce user ioSteth", async () => {
+      await mintStEth();
+      const initialHolding = await io.balanceOf(userAddr);
+      await redeemStEth();
+      const finalHolding = await io.balanceOf(userAddr);
+      const holdingDifference = ethers.utils.formatEther(finalHolding) - ethers.utils.formatEther(initialHolding);
+
+      assert.strictEqual(holdingDifference, -1);
+    });
+
+    it("should reduce user poSteth", async () => {
+      await mintStEth();
+      const initialHolding = await po.balanceOf(userAddr);
+      await redeemStEth();
+      const finalHolding = await po.balanceOf(userAddr);
+      const holdingDifference = ethers.utils.formatEther(finalHolding) - ethers.utils.formatEther(initialHolding);
+
+      assert.strictEqual(holdingDifference, -1);
+    });
+  });
+
+  describe("stakeIO()", () => {
+    it("should initialize staker deposit to 0", async () => {
+      const userDeposit = await strip.connect(user).stakerDeposits(userAddr);
+      assert.strictEqual(userDeposit.amount, 0);
+      console.log('userDeposit', userDeposit);
+    });
+
+    it("should stake a deposit", async () => {
+      await stakeIo();
+      const userDeposit = await strip.connect(user).stakerDeposits(userAddr);
+      assert.strictEqual(ethers.utils.formatEther(userDeposit.amount), "1.0");
+    });
+
+    it("should revert when attempting to stake a second deposit", async () => {
+      try {
+        await stakeIo();
+      } catch (e) {
+        assert.include(e.message, "existing deposit");
+        return;
+      }
+      assert.isOk(false);
+    });
+  });
+
+  describe("unstakeIOAndClaim()", () => {
+    it("should have a staker deposit", async () => {
+      const userDeposit = await strip.connect(user).stakerDeposits(userAddr);
+      assert.isAbove(userDeposit.amount, 0);
+    });
+
+    it("should reset staker deposit to 0 on unstaking", async () => {
+      await strip.connect(user).unstakeIOAndClaim();
+      const userDeposit = await strip.connect(user).stakerDeposits(userAddr);
+      assert.strictEqual(userDeposit.amount, 0);
+    });
+
+    it("should revert on attempting to unstake a second time", async () => {
+      const userDeposit = await strip.connect(user).stakerDeposits(userAddr);
+      assert.strictEqual(userDeposit.amount, 0);
+      try {
+        await strip.connect(user).unstakeIOAndClaim();
+      } catch (e) {
+        assert.include(e.message, "no staked IO");
+        return;
+      }
+      assert.isOk(false);
+    });
   });
 });

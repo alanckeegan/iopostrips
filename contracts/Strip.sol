@@ -3,6 +3,8 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./IOSteth.sol";
+import "./POSteth.sol";
 
 contract Strip {
   // need to find a way to make yield no longer accrue after expiry
@@ -19,15 +21,16 @@ contract Strip {
   }
 
   constructor(IERC20 _steth, uint _expiry, address _trackerAddr) {
-    // CAN CONSTRUCTOR DEPLOY IO AND PO AND SET THEM TO THE IERC20 INTERFACES
     steth = _steth;
     expiry = _expiry;
     trackerAddr = _trackerAddr;
+    io = new IOSTeth(10000 * (10**18));
+    po = new POSteth(10000 * (10**18));
   }
 
   function mint(uint _amount) external {
-    // recieves steth
-    require(steth.transferFrom(msg.sender, address(this), _amount));
+    // receives steth
+    require(steth.transferFrom(msg.sender, address(this), _amount), "Must approve stEth transfer prior to mint!");
 
     // mints IOsteth and POsteth to sender
     io.transfer(msg.sender, _amount);
@@ -36,9 +39,9 @@ contract Strip {
 
   function redeem(uint _amount) external {
 
-    // recieves IOsteth and POsteth 
-    require(io.transferFrom(msg.sender, address(this), _amount));
-    require(po.transferFrom(msg.sender, address(this), _amount));
+    // receives IOsteth and POsteth 
+    require(io.transferFrom(msg.sender, address(this), _amount), "Must approve ioSteth transfer prior to redeem!");
+    require(po.transferFrom(msg.sender, address(this), _amount), "Must approve poSteth transfer prior to redeem!");
 
     //  sends steth to sender
     steth.transfer(msg.sender, _amount);
@@ -48,7 +51,7 @@ contract Strip {
     // only after expiry
     require(block.timestamp >= expiry);
 
-    // recieves POsteth and 
+    // receives POsteth and 
     require(po.transferFrom(msg.sender, address(this), _amount));
 
     // sends equal amount of steth to sender
@@ -59,8 +62,8 @@ contract Strip {
     // check if mapping key already exists (existing deposit)
     require(stakerDeposits[msg.sender].amount == 0, "You have an existing deposit.  You must first claim and unstake to create a new staking deposit");
 
-    // recieves IO  
-    require(io.transferFrom(msg.sender, address(this), _amount));
+    // receives IO  
+    require(io.transferFrom(msg.sender, address(this), _amount), "Must approve ioSteth transfer prior to stake!");
 
     // creates a deposit with sender address and amount of steth in tracker at deposit time
     stakerDeposits[msg.sender] = IOStakerDeposit(_amount, yieldTrackerBalance());
