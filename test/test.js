@@ -1,12 +1,6 @@
 const { assert } = require("chai");
 const { ethers } = require("hardhat");
 
-// due to a rounding issue in the stETH contract, a value of 1 is being returned as 0.999999999999999999
-// this function returns the number rounded up to the next whole stETH
-function getRoundedSteth(stethValue) {
-  return Math.ceil(Number(ethers.utils.formatEther(stethValue)));
-}
-
 describe("Strip", function () {
   // addresses
   const STETH_CURVE_POOL = "0xdc24316b9ae028f1497c275eb9192a3ea0f67022";
@@ -19,6 +13,12 @@ describe("Strip", function () {
   
   // contracts
   let strip, stEth, io, po;
+
+  // due to a rounding issue in the deployed stETH contract, a value of 1 is being returned as 0.999999999999999999
+  // this function returns the number rounded up to the next whole stETH
+  const getRoundedSteth = stethValue => {
+    return Math.ceil(Number(ethers.utils.formatEther(stethValue)));
+  }
 
   const mintStEth = async () => {
     await stEth.connect(user).approve(strip.address, ethers.utils.parseEther('1.0'));
