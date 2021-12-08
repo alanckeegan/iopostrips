@@ -31,7 +31,7 @@ contract Strip {
   function mint(uint _amount) external {
     bool success = steth.transferFrom(msg.sender, address(this), _amount);
 
-    // recieves steth
+    // receives steth
     require(success, "Must approve stEth transfer prior to mint!");
 
     // mints IOsteth and POsteth to sender
@@ -41,7 +41,7 @@ contract Strip {
 
   function redeem(uint _amount) external {
 
-    // recieves IOsteth and POsteth 
+    // receives IOsteth and POsteth 
     require(io.transferFrom(msg.sender, address(this), _amount));
     require(po.transferFrom(msg.sender, address(this), _amount));
 
@@ -53,7 +53,7 @@ contract Strip {
     // only after expiry
     require(block.timestamp >= expiry);
 
-    // recieves POsteth and 
+    // receives POsteth and 
     require(po.transferFrom(msg.sender, address(this), _amount));
 
     // sends equal amount of steth to sender
@@ -64,7 +64,7 @@ contract Strip {
     // check if mapping key already exists (existing deposit)
     require(stakerDeposits[msg.sender].amount == 0, "You have an existing deposit.  You must first claim and unstake to create a new staking deposit");
 
-    // recieves IO  
+    // receives IO  
     require(io.transferFrom(msg.sender, address(this), _amount));
 
     // creates a deposit with sender address and amount of steth in tracker at deposit time
