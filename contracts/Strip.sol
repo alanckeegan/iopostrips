@@ -24,8 +24,8 @@ contract Strip {
     steth = _steth;
     expiry = _expiry;
     trackerAddr = _trackerAddr;
-    io = new IOSTeth(10**18);
-    po = new POSteth(10**18);
+    io = new IOSTeth(10000 * (10**18));
+    po = new POSteth(10000 * (10**18));
   }
 
   function mint(uint _amount) external {
