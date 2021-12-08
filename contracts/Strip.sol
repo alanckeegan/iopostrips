@@ -63,7 +63,7 @@ contract Strip {
     require(stakerDeposits[msg.sender].amount == 0, "You have an existing deposit.  You must first claim and unstake to create a new staking deposit");
 
     // receives IO  
-    require(io.transferFrom(msg.sender, address(this), _amount));
+    require(io.transferFrom(msg.sender, address(this), _amount), "Must approve ioSteth transfer prior to stake!");
 
     // creates a deposit with sender address and amount of steth in tracker at deposit time
     stakerDeposits[msg.sender] = IOStakerDeposit(_amount, yieldTrackerBalance());
