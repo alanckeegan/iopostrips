@@ -14,6 +14,7 @@ describe("Strip", function () {
   const STETH_CONTRACT_ADDRESS = "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84";
   const IO_CONTRACT_ADDRESS = "0xf1823bc4243b40423b8c8c3f6174e687a4c690b8";
   const PO_CONTRACT_ADDRESS = "0x6a1b3c7624b69000d7848916fb4f42026409586c";
+  const TIMESTAMP_STARTING_BLOCK = 1618558080
 
   // signers
   let signer, tracker, user;
@@ -43,9 +44,28 @@ describe("Strip", function () {
     await strip.connect(user).stakeIO(ethers.utils.parseEther('1.0'));
   }
 
+  const checkAccruedYield = async () => {
+   const result = (await strip.connect(user).checkAccruedYield(userAddr));
+   return result;
+  }
+
+  const incrementTracker = async() => {
+    await stEth.connect(curvePool).transfer(trackerAddr, ethers.utils.parseEther('.05'))
+  }
+
+  const claimYield = async() => {
+    await strip.connect(user).claimYield()
+  }
+
+  const claimPrincipal = async() => {
+    // console.log(await po.balanceOf(user))
+    await po.connect(user).approve(strip.address, ethers.utils.parseEther('1.0'))
+    await strip.connect(user).claimPrincipal(ethers.utils.parseEther('1.0'))
+  }
+
   before(async () => {
     // TODO: set expiry to sensible value once we understand the implications (currently set to 3 months from now)
-    const expiry = Date.now() + 7889400000;
+    const expiry = TIMESTAMP_STARTING_BLOCK + 7889400000;
 
     // deploy strip contract
 
@@ -74,7 +94,7 @@ describe("Strip", function () {
     stEth = await ethers.getContractAt("IERC20", STETH_CONTRACT_ADDRESS, signer);
     console.log('retrieved stEth contract at:', stEth.address);
 
-    // impersonate mainnet account that holds 1 stEth
+    // impersonate stETH curve pool
     
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
@@ -208,7 +228,6 @@ describe("Strip", function () {
     it("should initialize staker deposit to 0", async () => {
       const userDeposit = await strip.connect(user).stakerDeposits(userAddr);
       assert.strictEqual(userDeposit.amount, 0);
-      console.log('userDeposit', userDeposit);
     });
 
     it("should stake a deposit", async () => {
@@ -251,5 +270,86 @@ describe("Strip", function () {
       }
       assert.isOk(false);
     });
+  });
+
+  describe("checkAccruedYield()", () => {
+    
+    it("Should return zero immediately after deposit", async () => {
+      await stakeIo()
+      const yield = parseInt(await checkAccruedYield())
+      assert.strictEqual(yield, 0);
+    });
+
+    it("Should return a positive yield if tracker balance has gone up (.05 stETH)", async () => {
+      await incrementTracker()
+      const yield = await checkAccruedYield();
+      // literally can't figure out why this has to be a string... but i guess it does?
+      assert.strictEqual(parseFloat(ethers.utils.formatEther(yield)), 0.05)
+    });
+
+  });
+
+  describe("claimYield()", () => {
+    
+    it("Should should send .05 steth after tracker grows", async () => {
+      const preClaimBalance = ethers.utils.formatEther(await stEth.balanceOf(userAddr))
+      await claimYield()
+      const postClaimBalance = ethers.utils.formatEther(await stEth.balanceOf(userAddr))
+      // its, like.......00000000000044 different
+      assert(postClaimBalance - preClaimBalance >= 0.05)
+    });
+
+    it("Should reset deposit tracker value to current tracker value", async () => {
+      const userDeposit = await strip.connect(user).stakerDeposits(userAddr)
+      newDepositTrackerValue = userDeposit.trackerStartingValue
+      currentTrackerValue = await stEth.balanceOf(trackerAddr)
+      assert.strictEqual(currentTrackerValue, newDepositTrackerValue)
+    });
+
+    it("Should revert if there is no yield to claim", async () => {
+  
+      try {
+        await claimYield();
+      } catch (e) {
+        assert.include(e.message, "No yield to claim");
+        return;
+      }
+      assert.isOk(false);
+    });
+
+
+
+
+
+  });
+
+  describe("claimPrincipal()", () => {
+    
+    it("Should revert before expiry", async () => {
+      try {
+        await claimPrincipal();
+      } catch (e) {
+        assert.include(e.message, "No PO redemption before expiry");
+        return;
+      }
+      assert.isOk(false);
+    });
+
+    it("Should return 1 steth and take 1 PO after expiry", async () => {
+      preClaimBalanceSTETH = getRoundedSteth(await stEth.balanceOf(userAddr))
+      preClaimBalancePO = getRoundedSteth(await po.balanceOf(userAddr))
+
+      await network.provider.send("evm_increaseTime", [7889400000])
+      await network.provider.send("evm_mine") 
+     
+
+      await claimPrincipal()
+      postClaimBalanceSTETH = getRoundedSteth(await stEth.balanceOf(userAddr))
+      postClaimBalancePO = getRoundedSteth(await po.balanceOf(userAddr))
+
+      assert.strictEqual(postClaimBalanceSTETH - preClaimBalanceSTETH, 1)
+      assert.strictEqual(postClaimBalancePO - preClaimBalancePO, -1)
+    });
+
   });
 });
