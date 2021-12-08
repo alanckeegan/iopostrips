@@ -40,8 +40,8 @@ contract Strip {
   function redeem(uint _amount) external {
 
     // receives IOsteth and POsteth 
-    require(io.transferFrom(msg.sender, address(this), _amount));
-    require(po.transferFrom(msg.sender, address(this), _amount));
+    require(io.transferFrom(msg.sender, address(this), _amount), "Must approve ioSteth transfer prior to redeem!");
+    require(po.transferFrom(msg.sender, address(this), _amount), "Must approve poSteth transfer prior to redeem!");
 
     //  sends steth to sender
     steth.transfer(msg.sender, _amount);
