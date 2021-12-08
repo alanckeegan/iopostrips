@@ -1,6 +1,12 @@
 const { assert } = require("chai");
 const { ethers } = require("hardhat");
 
+// due to a rounding issue in the stETH contract, a value of 1 is being returned as 0.999999999999999999
+// this function returns the number rounded up to the next whole stETH
+function getRoundedSteth(stethValue) {
+  return Math.ceil(Number(ethers.utils.formatEther(stethValue)));
+}
+
 describe("Strip", function () {
   // addresses
   const STETH_CURVE_POOL = "0xdc24316b9ae028f1497c275eb9192a3ea0f67022";
@@ -54,14 +60,14 @@ describe("Strip", function () {
 
     curvePool = await ethers.provider.getSigner(STETH_CURVE_POOL);
 
-    await stEth.connect(curvePool).transfer(trackerAddr, ethers.utils.parseEther('1.0'))
-    await stEth.connect(curvePool).transfer(userAddr, ethers.utils.parseEther('5.0'))
+    await stEth.connect(curvePool).transfer(trackerAddr, ethers.utils.parseEther('1.0'));
+    await stEth.connect(curvePool).transfer(userAddr, ethers.utils.parseEther('5.0'));
 
     const trackerBalance = await stEth.balanceOf(trackerAddr);
     const userBalance = await stEth.balanceOf(userAddr);
 
-    console.log('Tracker Wallet Starting STETH Balance = ', ethers.utils.formatEther(trackerBalance));
-    console.log('User Wallet Starting STETH Balance= ', ethers.utils.formatEther(userBalance));
+    console.log('Tracker Wallet Starting STETH Balance = ', getRoundedSteth(trackerBalance));
+    console.log('User Wallet Starting STETH Balance= ', getRoundedSteth(userBalance));
 
     
   })
@@ -84,7 +90,7 @@ describe("Strip", function () {
   });
 
   describe("mint()", () => {
-    describe("stETH transfer has not been approved", () => {
+    describe("stETH transfer not approved", () => {
       it("should throw revert error on method call", async () => {
         try {
           await strip.connect(user).mint(1);
@@ -104,6 +110,19 @@ describe("Strip", function () {
 
         const stripBalance = await stEth.balanceOf(strip.address);
         assert.strictEqual(stripBalance, 0);
+      });
+    });
+    describe("stETH transfer approved", () => {
+      // this.beforeEach(async () => {
+        
+      // });
+
+      it("should transfer 1 stETH to Strip contract", async () => {
+        console.log("what is strip.address?", strip.address);
+        await stEth.connect(user).approve(strip.address, ethers.utils.parseEther('1.0'));
+        await strip.connect(user).mint(ethers.utils.parseEther('1.0'));
+        const stripBalance = await stEth.balanceOf(strip.address);
+        assert.strictEqual(getRoundedSteth(stripBalance), 1);
       });
     });
   });
