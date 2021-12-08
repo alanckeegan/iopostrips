@@ -21,7 +21,6 @@ contract Strip {
   }
 
   constructor(IERC20 _steth, uint _expiry, address _trackerAddr) {
-    // CAN CONSTRUCTOR DEPLOY IO AND PO AND SET THEM TO THE IERC20 INTERFACES
     steth = _steth;
     expiry = _expiry;
     trackerAddr = _trackerAddr;
@@ -30,8 +29,10 @@ contract Strip {
   }
 
   function mint(uint _amount) external {
+    bool success = steth.transferFrom(msg.sender, address(this), _amount);
+
     // recieves steth
-    require(steth.transferFrom(msg.sender, address(this), _amount));
+    require(success, "Must approve stEth transfer prior to mint!");
 
     // mints IOsteth and POsteth to sender
     io.transfer(msg.sender, _amount);
