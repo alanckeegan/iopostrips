@@ -83,9 +83,28 @@ describe("Strip", function () {
     })
   });
 
-  xdescribe("mint()", () => {
-    it("should revert if stEth has not been approved for transfer", async () => {      
-      assert.isAbove(totalSupply, 0);
-    })
+  describe("mint()", () => {
+    describe("stETH transfer has not been approved", () => {
+      it("should throw revert error on method call", async () => {
+        try {
+          await strip.connect(user).mint(1);
+        } catch (e) {
+          assert.include(e.message, 'revert');
+          return;
+        }
+        assert.isOk(false);
+      });
+
+      it("should not transfer 1 stETH to Strip contract", async () => {
+        try {
+          await strip.connect(user).mint(1);
+        } catch (e) { 
+          // carry on execution
+        }
+
+        const stripBalance = await stEth.balanceOf(strip.address);
+        assert.strictEqual(stripBalance, 0);
+      });
+    });
   });
 });
