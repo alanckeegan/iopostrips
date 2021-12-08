@@ -113,16 +113,20 @@ describe("Strip", function () {
       });
     });
     describe("stETH transfer approved", () => {
-      // this.beforeEach(async () => {
-        
-      // });
-
       it("should transfer 1 stETH to Strip contract", async () => {
-        console.log("what is strip.address?", strip.address);
         await stEth.connect(user).approve(strip.address, ethers.utils.parseEther('1.0'));
         await strip.connect(user).mint(ethers.utils.parseEther('1.0'));
         const stripBalance = await stEth.balanceOf(strip.address);
         assert.strictEqual(getRoundedSteth(stripBalance), 1);
+      });
+
+      it("should reduce user stETH holdings by 1", async () => {
+        const initalHolding = await stEth.balanceOf(userAddr);
+        await stEth.connect(user).approve(strip.address, ethers.utils.parseEther('1.0'));
+        await strip.connect(user).mint(ethers.utils.parseEther('1.0'));
+        const finalHolding = await stEth.balanceOf(userAddr);
+        const holdingDifference = getRoundedSteth(initalHolding) - getRoundedSteth(finalHolding);
+        assert.strictEqual(holdingDifference, 1);
       });
     });
   });
