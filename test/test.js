@@ -218,6 +218,31 @@ describe("Strip", function () {
         return;
       }
       assert.isOk(false);
-    })
-  })
+    });
+  });
+
+  describe("unstakeIOAndClaim()", () => {
+    it("should have a staker deposit", async () => {
+      const userDeposit = await strip.connect(user).stakerDeposits(userAddr);
+      assert.isAbove(userDeposit.amount, 0);
+    });
+
+    it("should reset staker deposit to 0 on unstaking", async () => {
+      await strip.connect(user).unstakeIOAndClaim();
+      const userDeposit = await strip.connect(user).stakerDeposits(userAddr);
+      assert.strictEqual(userDeposit.amount, 0);
+    });
+
+    it("should revert on attempting to unstake a second time", async () => {
+      const userDeposit = await strip.connect(user).stakerDeposits(userAddr);
+      assert.strictEqual(userDeposit.amount, 0);
+      try {
+        await strip.connect(user).unstakeIOAndClaim();
+      } catch (e) {
+        assert.include(e.message, "no staked IO");
+        return;
+      }
+      assert.isOk(false);
+    });
+  });
 });
