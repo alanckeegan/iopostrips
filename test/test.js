@@ -1,6 +1,13 @@
 const { assert } = require("chai");
 const { ethers } = require("hardhat");
 
+// testing reverts in async functions
+// there's a pattern used in the tests below where an async function is called in a try block and expected to throw an error (revert)
+// the catch block runs in the case of an error and the test then "passes"
+// if the catch block is skipped, the test "fails"
+// this test should be reliable, but is not the most readable, hence this note
+// there may be other ways to test errors in async functions, but this seemed to be a reasonable approach
+
 describe("Strip", function () {
   // addresses
   const STETH_CURVE_POOL = "0xdc24316b9ae028f1497c275eb9192a3ea0f67022";
@@ -14,7 +21,7 @@ describe("Strip", function () {
   // contracts
   let strip, stEth, io, po;
 
-  // due to a rounding issue in the deployed stETH contract, a value of 1 is being returned as 0.999999999999999999
+  // due to a rounding issue in the deploystETH contract, a value of 1 is being returned as 0.999999999999999999
   // this function returns the number rounded up to the next whole stETH
   const getRoundedSteth = stethValue => {
     return Math.ceil(Number(ethers.utils.formatEther(stethValue)));
