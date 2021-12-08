@@ -112,10 +112,11 @@ contract Strip {
     // calculate accrued yield by looking at yieldTrackerBalance()
     uint startingValue = stakerDeposits[_staker].trackerStartingValue;
     uint stakedIO = stakerDeposits[_staker].amount;
-    
+
+    // the % growth in the value of the STETH * the amount of IO deposited is the claimable yield
+    // have to multiply by stakeIO before dividing becuase solidity doesn't do fractions apparently
     uint stethYield = (yieldTrackerBalance() - startingValue) * stakedIO/startingValue;
   
-    // the % growth in the value of the STETH * the amount of IO deposited is the claimable yield
     return stethYield;
   }
 
