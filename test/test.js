@@ -71,9 +71,21 @@ describe("Strip", function () {
       const totalSupply = await io.totalSupply();
       assert.isAbove(totalSupply, 0);
     })
+
     it("should deploy the PO contract with total supply greater than 0", async () => {
       const totalSupply = await po.totalSupply();
       assert.isAbove(totalSupply, 0);
     })
-  })
+
+    it("should have an initial balance of 0 stETH in Strip contract", async () => {
+      const stripBalance = await stEth.balanceOf(strip.address);
+      assert.strictEqual(stripBalance, 0);
+    })
+  });
+
+  xdescribe("mint()", () => {
+    it("should revert if stEth has not been approved for transfer", async () => {      
+      assert.isAbove(totalSupply, 0);
+    })
+  });
 });
