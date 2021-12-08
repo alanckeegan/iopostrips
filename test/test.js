@@ -31,6 +31,11 @@ describe("Strip", function () {
     await strip.connect(user).redeem(ethers.utils.parseEther('1.0'));
   }
 
+  const stakeIo = async () => {
+    await io.connect(user).approve(strip.address, ethers.utils.parseEther('1.0'));
+    await strip.connect(user).stakeIO(ethers.utils.parseEther('1.0'));
+  }
+
   before(async () => {
     // TODO: set expiry to sensible value once we understand the implications (currently set to 3 months from now)
     const expiry = Date.now() + 7889400000;
@@ -106,7 +111,7 @@ describe("Strip", function () {
         try {
           await strip.connect(user).mint(1);
         } catch (e) {
-          assert.include(e.message, 'revert');
+          assert.include(e.message, "revert");
           return;
         }
         assert.isOk(false);
@@ -191,4 +196,28 @@ describe("Strip", function () {
       assert.strictEqual(holdingDifference, -1);
     });
   });
+
+  describe("stakeIO()", () => {
+    it("should initialize staker deposit to 0", async () => {
+      const userDeposit = await strip.connect(user).stakerDeposits(userAddr);
+      assert.strictEqual(userDeposit.amount, 0);
+      console.log('userDeposit', userDeposit);
+    });
+
+    it("should stake a deposit", async () => {
+      await stakeIo();
+      const userDeposit = await strip.connect(user).stakerDeposits(userAddr);
+      assert.strictEqual(ethers.utils.formatEther(userDeposit.amount), "1.0");
+    });
+
+    it("should revert when attempting to stake a second deposit", async () => {
+      try {
+        await stakeIo();
+      } catch (e) {
+        assert.include(e.message, "existing deposit");
+        return;
+      }
+      assert.isOk(false);
+    })
+  })
 });
