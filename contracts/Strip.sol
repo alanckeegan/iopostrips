@@ -29,10 +29,8 @@ contract Strip {
   }
 
   function mint(uint _amount) external {
-    bool success = steth.transferFrom(msg.sender, address(this), _amount);
-
     // receives steth
-    require(success, "Must approve stEth transfer prior to mint!");
+    require(steth.transferFrom(msg.sender, address(this), _amount), "Must approve stEth transfer prior to mint!");
 
     // mints IOsteth and POsteth to sender
     io.transfer(msg.sender, _amount);
