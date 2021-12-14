@@ -91,7 +91,7 @@ describe("Strip", function () {
     console.log('po deployed to:', po.address);
     
     // retrieve stEth contract (we may not actually need this to be defined in our test file, but keeping for the moment)
-    stEth = await ethers.getContractAt("IERC20", STETH_CONTRACT_ADDRESS, signer);
+    stEth = await ethers.getContractAt("ISTETH", STETH_CONTRACT_ADDRESS, signer);
     console.log('retrieved stEth contract at:', stEth.address);
 
     // impersonate stETH curve pool
@@ -338,11 +338,8 @@ describe("Strip", function () {
     it("Should return 1 steth and take 1 PO after expiry", async () => {
       preClaimBalanceSTETH = getRoundedSteth(await stEth.balanceOf(userAddr))
       preClaimBalancePO = getRoundedSteth(await po.balanceOf(userAddr))
-
       await network.provider.send("evm_increaseTime", [7889400000])
       await network.provider.send("evm_mine") 
-     
-
       await claimPrincipal()
       postClaimBalanceSTETH = getRoundedSteth(await stEth.balanceOf(userAddr))
       postClaimBalancePO = getRoundedSteth(await po.balanceOf(userAddr))

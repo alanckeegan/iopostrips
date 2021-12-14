@@ -5,13 +5,14 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./IOSteth.sol";
 import "./POSteth.sol";
+import "../artifacts/interfaces/ISTETH.sol";
 
 contract Strip {
   // need to find a way to make yield no longer accrue after expiry
   uint expiry;
   IERC20 io;
   IERC20 po;
-  IERC20 steth;
+  ISTETH steth;
   address trackerAddr;
   mapping (address => IOStakerDeposit) public stakerDeposits;
 
@@ -20,7 +21,7 @@ contract Strip {
     uint trackerStartingValue;
   }
 
-  constructor(IERC20 _steth, uint _expiry, address _trackerAddr) {
+  constructor(ISTETH _steth, uint _expiry, address _trackerAddr) {
     steth = _steth;
     expiry = _expiry;
     trackerAddr = _trackerAddr;
