@@ -5,7 +5,7 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./IOSteth.sol";
 import "./POSteth.sol";
-import "../artifacts/interfaces/ISTETH.sol";
+import "../custom_interfaces/ISTETH.sol";
 
 contract Strip {
   // need to find a way to make yield no longer accrue after expiry
@@ -21,10 +21,13 @@ contract Strip {
     uint trackerStartingValue;
   }
 
-  constructor(ISTETH _steth, uint _expiry, address _trackerAddr) {
-    steth = _steth;
+  constructor(address _steth, uint _expiry, address _trackerAddr) {
+    steth = ISTETH(_steth);
     expiry = _expiry;
     trackerAddr = _trackerAddr;
+
+    // this limits the contract to stripping 10k stETH, ideally would muck around
+    // with a mint function in a customized erc-20
     io = new IOSTeth(10000 * (10**18));
     po = new POSteth(10000 * (10**18));
     console.log(block.timestamp);

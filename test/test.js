@@ -1,6 +1,8 @@
 const { assert } = require("chai");
 const { ethers } = require("hardhat");
 
+
+
 // testing reverts in async functions
 // there's a pattern used in the tests below where an async function is called in a try block and expected to throw an error (revert)
 // the catch block runs in the case of an error and the test then "passes"
@@ -22,7 +24,7 @@ describe("Strip", function () {
   // contracts
   let strip, stEth, io, po;
 
-  // due to a rounding issue in the deploystETH contract, a value of 1 is being returned as 0.999999999999999999
+  // due to a rounding issue in the stETH contract, a value of 1 is being returned as 0.999999999999999999
   // this function returns the number rounded up to the next whole stETH
   const getRoundedSteth = stethValue => {
     return Math.ceil(Number(ethers.utils.formatEther(stethValue)));
