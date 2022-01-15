@@ -24,7 +24,7 @@ describe("Strip", function () {
   // contracts
   let strip, stEth, io, po;
 
-  // due to a rounding issue in the stETH contract, a value of 1 is being returned as 0.999999999999999999
+  // due to a rounding issue in the deploy stETH contract, a value of 1 is being returned as 0.999999999999999999
   // this function returns the number rounded up to the next whole stETH
   const getRoundedSteth = stethValue => {
     return Math.ceil(Number(ethers.utils.formatEther(stethValue)));
@@ -65,9 +65,15 @@ describe("Strip", function () {
     await strip.connect(user).claimPrincipal(ethers.utils.parseEther('1.0'))
   }
 
+  const getPooledEthByShares = async() => {
+    const result = await stEth.connect(user).getPooledEthByShares(ethers.utils.parseEther('1.0'));
+    return ethers.utils.formatEther(result);
+  }
+
   before(async () => {
     // TODO: set expiry to sensible value once we understand the implications (currently set to 3 months from now)
     const expiry = TIMESTAMP_STARTING_BLOCK + 7889400000;
+
 
     // deploy strip contract
 
@@ -88,7 +94,6 @@ describe("Strip", function () {
     // retrieve IO and PO contracts
     io = await ethers.getContractAt("IERC20", IO_CONTRACT_ADDRESS);
     po = await ethers.getContractAt("IERC20", PO_CONTRACT_ADDRESS);
-
     console.log('io deployed to:', io.address);
     console.log('po deployed to:', po.address);
     
@@ -113,7 +118,8 @@ describe("Strip", function () {
 
     console.log('Tracker Wallet Starting STETH Balance = ', getRoundedSteth(trackerBalance));
     console.log('User Wallet Starting STETH Balance= ', getRoundedSteth(userBalance));
-
+    const pooledEthByShares = await getPooledEthByShares()
+    console.log('Eth by shares for STETH = ', pooledEthByShares)
     
   })
 
@@ -274,6 +280,7 @@ describe("Strip", function () {
     });
   });
 
+  // Needs to be rewritten to incorporate interaction with steth
   describe("checkAccruedYield()", () => {
     
     it("Should return zero immediately after deposit", async () => {
@@ -290,6 +297,8 @@ describe("Strip", function () {
     });
 
   });
+
+  // needs to be rewritten to incorporation interaction with steth
 
   describe("claimYield()", () => {
     
@@ -351,4 +360,6 @@ describe("Strip", function () {
     });
 
   });
+  
+
 });

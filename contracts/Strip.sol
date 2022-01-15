@@ -10,6 +10,7 @@ import "../custom_interfaces/ISTETH.sol";
 contract Strip {
   // need to find a way to make yield no longer accrue after expiry
   uint expiry;
+
   IERC20 io;
   IERC20 po;
   ISTETH steth;
@@ -52,6 +53,7 @@ contract Strip {
     steth.transfer(msg.sender, _amount);
   }
 
+
   function claimPrincipal(uint _amount) external {
     // only after expiry
     require(block.timestamp >= expiry, "No PO redemption before expiry");
@@ -71,7 +73,7 @@ contract Strip {
     require(io.transferFrom(msg.sender, address(this), _amount), "Must approve ioSteth transfer prior to stake!");
 
     // creates a deposit with sender address and amount of steth in tracker at deposit time
-    stakerDeposits[msg.sender] = IOStakerDeposit(_amount, yieldTrackerBalance());
+    stakerDeposits[msg.sender] = IOStakerDeposit(_amount, yieldTrackerCheck());
 
   }
   
@@ -83,11 +85,12 @@ contract Strip {
     require(yield > 0, "No yield to claim, bucko, have your gas back");
 
     // resets tracker amount on deposit to current steth tracker amount
-    stakerDeposits[msg.sender].trackerStartingValue = yieldTrackerBalance();
+    stakerDeposits[msg.sender].trackerStartingValue = yieldTrackerCheck();
     
     // sends that steth
     steth.transfer(msg.sender, yield);
   }
+
 
   function unstakeIOAndClaim() external {
     // Make sure they have a deposit
@@ -105,10 +108,12 @@ contract Strip {
     steth.transfer(msg.sender, yield);
   }
 
-  function yieldTrackerBalance() internal view returns(uint) {
-    // checks a wallet (hopefully later a vault that can't recieve other steth) for it's steth balance
-    return steth.balanceOf(trackerAddr);
-    
+  function yieldTrackerCheck() internal view returns(uint) {
+    console.log(steth.getPooledEthByShares(10**18));
+
+    // Checks the #ETH by shares of stETH, which should increase as yield accrues
+    return steth.getPooledEthByShares(10**18);
+ 
   }
 
   function checkAccruedYield(address _staker) public view returns(uint) {
@@ -117,9 +122,9 @@ contract Strip {
     uint startingValue = stakerDeposits[_staker].trackerStartingValue;
     uint stakedIO = stakerDeposits[_staker].amount;
 
-    // the % growth in the value of the STETH * the amount of IO deposited is the claimable yield
+    // the % growth in the # of eth/steth shares * the amount of IO deposited is the claimable yield
     // have to multiply by stakeIO before dividing becuase solidity doesn't do fractions apparently
-    uint stethYield = (yieldTrackerBalance() - startingValue) * stakedIO/startingValue;
+    uint stethYield = (yieldTrackerCheck() - startingValue) * stakedIO/startingValue;
   
     return stethYield;
   }
