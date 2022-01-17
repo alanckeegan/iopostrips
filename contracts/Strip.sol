@@ -107,11 +107,9 @@ contract Strip {
   }
 
   function yieldTrackerCheck() internal view returns(uint) {
-    console.log(steth.getPooledEthByShares(10**18));
 
     // Checks the #ETH by shares of stETH, which should increase as yield accrues
     return steth.getPooledEthByShares(10**18);
- 
   }
 
   function checkAccruedYield(address _staker) public view returns(uint) {
@@ -126,11 +124,5 @@ contract Strip {
   
     return stethYield;
   }
-
-  // this function exists only for testing
-  function printTime() public view{
-    console.log(block.timestamp);
-  }
-
 
 }

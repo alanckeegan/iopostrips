@@ -302,19 +302,20 @@ describe("Strip", function () {
 
   describe("claimYield()", () => {
 
-    it("Gadddd dang mining blocks does't increase steth eth per share", async () => {
+    it("What does getPooledEthByShares return?", async () => {
    
-      console.log(await hre.network.provider.send('eth_blockNumber'))
-      console.log(await stEth.getPooledEthByShares(ethers.utils.parseEther('1')))
-      await strip.connect(user).printTime()
+      // console.log(await hre.network.provider.send('eth_blockNumber'))
+      // previous = 1.015
+      console.log(ethers.utils.formatEther(await stEth.getPooledEthByShares(ethers.utils.parseEther('1'))))
+      // await strip.connect(user).printTime()
       // for(let i = 0; i < 70000; i++) {
       //   await hre.network.provider.send('evm_mine')
       // }
-      await network.provider.send("evm_increaseTime", [31536000])
-      await network.provider.send("evm_mine") 
-      await strip.connect(user).printTime()
-      console.log(await hre.network.provider.send('eth_blockNumber'))
-      console.log(await stEth.getPooledEthByShares(ethers.utils.parseEther('1')))
+      // await network.provider.send("evm_increaseTime", [31536000])
+      // await network.provider.send("evm_mine") 
+      // await strip.connect(user).printTime()
+      // console.log(await hre.network.provider.send('eth_blockNumber'))
+      // console.log(await stEth.getPooledEthByShares(ethers.utils.parseEther('1')))
 
     })
 
