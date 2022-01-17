@@ -8,9 +8,7 @@ import "./POSteth.sol";
 import "../custom_interfaces/ISTETH.sol";
 
 contract Strip {
-  // need to find a way to make yield no longer accrue after expiry
   uint expiry;
-
   IERC20 io;
   IERC20 po;
   ISTETH steth;
@@ -127,6 +125,11 @@ contract Strip {
     uint stethYield = (yieldTrackerCheck() - startingValue) * stakedIO/startingValue;
   
     return stethYield;
+  }
+
+  // this function exists only for testing
+  function printTime() public view{
+    console.log(block.timestamp);
   }
 
 
