@@ -19,7 +19,7 @@ describe("Strip", function () {
   const TIMESTAMP_STARTING_BLOCK = 1618558080
 
   // signers
-  let signer, tracker, user;
+  let signer, user;
   
   // contracts
   let strip, stEth, io, po;
@@ -51,9 +51,6 @@ describe("Strip", function () {
    return result;
   }
 
-  const incrementTracker = async() => {
-    await stEth.connect(curvePool).transfer(trackerAddr, ethers.utils.parseEther('.05'))
-  }
 
   const claimYield = async() => {
     await strip.connect(user).claimYield()
@@ -79,14 +76,12 @@ describe("Strip", function () {
 
     signer = await ethers.provider.getSigner(0);
     user = await ethers.provider.getSigner(1);
-    tracker = await ethers.provider.getSigner(2);
 
     signerAddr = await signer.getAddress()
     userAddr = await user.getAddress()
-    trackerAddr = await tracker.getAddress()
 
     const Strip = await ethers.getContractFactory("Strip", signer);
-    strip = await Strip.deploy(STETH_CONTRACT_ADDRESS, expiry, trackerAddr);
+    strip = await Strip.deploy(STETH_CONTRACT_ADDRESS, expiry);
     await strip.deployed();
 
     console.log('strip deployed to:', strip.address);
@@ -110,13 +105,10 @@ describe("Strip", function () {
 
     curvePool = await ethers.provider.getSigner(STETH_CURVE_POOL);
 
-    await stEth.connect(curvePool).transfer(trackerAddr, ethers.utils.parseEther('1.0'));
     await stEth.connect(curvePool).transfer(userAddr, ethers.utils.parseEther('5.0'));
 
-    const trackerBalance = await stEth.balanceOf(trackerAddr);
     const userBalance = await stEth.balanceOf(userAddr);
 
-    console.log('Tracker Wallet Starting STETH Balance = ', getRoundedSteth(trackerBalance));
     console.log('User Wallet Starting STETH Balance= ', getRoundedSteth(userBalance));
     const pooledEthByShares = await getPooledEthByShares()
     console.log('Eth by shares for STETH = ', pooledEthByShares)
@@ -142,6 +134,7 @@ describe("Strip", function () {
 
   describe("mint()", () => {
     describe("stETH transfer not approved", () => {
+      
       it("should throw revert error on method call", async () => {
         try {
           await strip.connect(user).mint(1);
@@ -162,6 +155,7 @@ describe("Strip", function () {
         const stripBalance = await stEth.balanceOf(strip.address);
         assert.strictEqual(stripBalance, 0);
       });
+
     });
     describe("stETH transfer approved", () => {
       it("should transfer 1 stETH to Strip contract", async () => {
@@ -320,15 +314,7 @@ describe("Strip", function () {
     })
 
     
-    it("Should should send .05 steth after tracker grows", async () => {
 
-      
-      // const preClaimBalance = ethers.utils.formatEther(await stEth.balanceOf(userAddr))
-      // await claimYield()
-      // const postClaimBalance = ethers.utils.formatEther(await stEth.balanceOf(userAddr))
-      // // its, like.......00000000000044 different
-      // assert(postClaimBalance - preClaimBalance >= 0.05)
-    });
 
   //   it("Should reset deposit tracker value to current tracker value", async () => {
   //     const userDeposit = await strip.connect(user).stakerDeposits(userAddr)

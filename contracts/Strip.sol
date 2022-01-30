@@ -1,7 +1,6 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./IOSteth.sol";
 import "./POSteth.sol";
@@ -12,7 +11,6 @@ contract Strip {
   IERC20 io;
   IERC20 po;
   ISTETH steth;
-  address trackerAddr;
   mapping (address => IOStakerDeposit) public stakerDeposits;
 
   struct IOStakerDeposit {
@@ -20,16 +18,15 @@ contract Strip {
     uint trackerStartingValue;
   }
 
-  constructor(address _steth, uint _expiry, address _trackerAddr) {
+  constructor(address _steth, uint _expiry) {
     steth = ISTETH(_steth);
     expiry = _expiry;
-    trackerAddr = _trackerAddr;
 
     // this limits the contract to stripping 10k stETH, ideally would muck around
     // with a mint function in a customized erc-20
     io = new IOSTeth(10000 * (10**18));
     po = new POSteth(10000 * (10**18));
-    console.log(block.timestamp);
+  
   }
 
   function mint(uint _amount) external {
